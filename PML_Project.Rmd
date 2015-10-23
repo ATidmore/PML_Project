@@ -1,0 +1,23 @@
+---
+title: "PML_Project"
+author: "austin tidmore"
+date: "October 23, 2015"
+output: html_document
+---
+
+# Executive Summary
+The goal of this project is to accurately predict the manner in which the subject completed the exercise - known as the "classe" variable in the following datasets. 
+
+I build a model using cross-validation to reduce the out of sample error rate. 
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
