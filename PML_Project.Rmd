@@ -6,18 +6,17 @@ output: html_document
 ---
 
 # Executive Summary
-The goal of this project is to accurately predict the manner in which the subject completed the exercise - known as the "classe" variable in the following datasets. 
+The goal of this project is to accurately predict the manner in which the subject completed the exercise - known as the "classe" variable - in the following datasets. The subjects either completed the exercise correctly (indicated by a "classe" value of A) or incorrectly (indicated by a value of "B" through "E" each of which corrresponds to a reason why the result was incorrect). 
 
-I build a model using cross-validation to reduce the out of sample error rate. 
+Because the Training dataset was so large and I knew the requirement was to predict the outcome of 20 cases, I decided to split the Training dataset into a cross-validation dataset. This would help me understand the potential out of sample error rate.
 
-```{r}
-summary(cars)
+My approach was over-all very simple: I would pair down the 160 variables in the Training dataset as much as possible and use a robust machine learning algorithm (Random Forest) as a starting point. I was pleasantly surprised that my model with little customization apart from removing extraneous variables was very accurate. 
+# Method
+
+
+
+
+```{r, eval=FALSE}
+ YOUR TRAIN MODEL HERE
 ```
 
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
