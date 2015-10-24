@@ -1,2 +1,9 @@
 # PML_Project
-Repo to hold code related to PML course project
+
+
+This work has been knitr'd as an HTML page and can be viewed at 
+
+[Github.io](http://atidmore.github.io/PML_Project/PML_Project.html)
+
+
+Please enjoy!
