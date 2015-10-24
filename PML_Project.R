@@ -1,6 +1,6 @@
 # set up env
 require(caret) #loads ggplot2 also
-library(randomForest)
+
 
 setwd("~/Training/CourseraDataScience/8PML")
 set.seed(1234)
@@ -14,7 +14,7 @@ test.raw <- read.csv(file="pml-testing.csv", header=TRUE, as.is = TRUE, stringsA
 
 # Pre process
 ## Remove columns with too many NA values ; don't forget to do this for Test set, too. 
-table(colSums(is.na(train.raw))/nrow(train.raw)) # shows 100 columns have .979 NA values
+hist(colSums(is.na(train.raw))/nrow(train.raw), main = "Variable Missing Values", xlab = "Proportion") # shows 100 columns have .979 NA values
 
 bad.cols <- which(colSums(is.na(train.raw))/nrow(train.raw) > 0 )
 
@@ -52,8 +52,6 @@ model.fit <- train(as.factor(classe) ~ . ,data = train.final ,method = "rf")
 
 crossval2 <- predict(pre, crossval[ ,num.cols])
 
-near.0 <- nearZeroVar(x = crossval2, saveMetrics = TRUE) #remove any NZV; looks to be 0 
-
 crossval.final <- crossval2[,near.0$nzv==FALSE]
 crossval.final$classe <- crossval$classe
 
@@ -70,7 +68,7 @@ saveRDS(model.fit, file ="modelfit.RDS")
 
 # Apply to test set
 test2 <- predict(pre, test.pre[ ,num.cols])
-near.0 <- nearZeroVar(x = test2, saveMetrics = TRUE) #remove any NZV; looks to be 0 
+
 
 test.final <- test2[,near.0$nzv==FALSE]
 

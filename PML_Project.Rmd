@@ -5,18 +5,105 @@ date: "October 23, 2015"
 output: html_document
 ---
 
-# Executive Summary
+## Executive Summary
 The goal of this project is to accurately predict the manner in which the subject completed the exercise - known as the "classe" variable - in the following datasets. The subjects either completed the exercise correctly (indicated by a "classe" value of A) or incorrectly (indicated by a value of "B" through "E" each of which corrresponds to a reason why the result was incorrect). 
 
 Because the Training dataset was so large and I knew the requirement was to predict the outcome of 20 cases, I decided to split the Training dataset into a cross-validation dataset. This would help me understand the potential out of sample error rate.
 
 My approach was over-all very simple: I would pair down the 160 variables in the Training dataset as much as possible and use a robust machine learning algorithm (Random Forest) as a starting point. I was pleasantly surprised that my model with little customization apart from removing extraneous variables was very accurate. 
-# Method
 
+## Method
 
+For R analysis some setup steps need to be taken:
 
+```{r message =FALSE ,eval = TRUE}
+require(caret)
 
-```{r, eval=FALSE}
- YOUR TRAIN MODEL HERE
+set.seed(1234)
+
+train.raw <- read.csv(file="pml-training.csv", header=TRUE, as.is = TRUE, stringsAsFactors = FALSE, na.strings=c("NA",""))
+test.raw <- read.csv(file="pml-testing.csv", header=TRUE, as.is = TRUE, stringsAsFactors = FALSE, na.strings=c("NA",""))
 ```
+
+Since the Training dataset contained numerous variables (160), my first step was to identify and eliminate any variables which had "too many" missing values. I examined the data proportion of missing values in each column first, and it was evident that I could remove any column whose percentage of missing values was greater than 0.
+
+```{r echo = FALSE}
+hist(colSums(is.na(train.raw))/nrow(train.raw), main = "Variable Missing Values", xlab = "Proportion")
+```
+
+It is crucial to remove from the Test dataset any columns we removed from Training. Since I planned on cross-validating, the CV dataset is created here also.
+```{r eval = TRUE}
+bad.cols <- which(colSums(is.na(train.raw))/nrow(train.raw) > 0 )
+
+train.pre <- train.raw[ ,-bad.cols]
+
+test.pre <- test.raw[ ,-bad.cols]
+
+inTrain <- createDataPartition(y = train.pre$classe, p = 0.75, list = FALSE)
+
+training <- train.pre[inTrain, ]
+crossval <- train.pre[-inTrain, ]
+```
+
+### Basic Pre-Processing
+The remaining variables of the Training dataset were mostly numeric in nature, and the non-numeric variables did not seem to be pertinent to my analysis. In order to assure that the remaining numeric variables could help explain the variance of the "classe" outcome, I centered and scaled those numeric variables and removed any which had near zero variance themselves - I did not identify any meeting this near-zero criterion.
+
+```{r}
+num.cols <- which(lapply(training, class) %in% "numeric")
+
+pre <- preProcess(training[,num.cols],method=c('center', 'scale'))
+
+train2 <- predict(pre, training[ ,num.cols])
+
+near.0 <- nearZeroVar(x = train2, saveMetrics = TRUE)
+
+train.final <- train2[,near.0$nzv==FALSE]
+train.final$classe <- training$classe
+```
+
+## Training the Model
+A straight-forward Random Forest algorithm was selected due to its robust characteristics. Since I had pre-processed the data I was certain that the output would be digestible. Random Forest algorithms inherently bootstrap and attempt to optimize accuracy on its own. 
+
+The accuracy of the final model (mtry = 2) was over 98.9% - an exceptional result for a straight-forward approach. This indicates the out of sample error rate should be somewhere around 1.1%.
+```{r eval=FALSE}
+ model.fit <- train(as.factor(classe) ~ . ,data = train.final ,method = "rf")
+```
+
+```{r echo = FALSE, message=FALSE}
+model.fit <- readRDS("modelfit.RDS")
+```
+
+```{r echo = FALSE}
+model.fit
+```
+
+### Cross-validation
+A cross-validation dataset was necessary so that I could better understand my model's performance and potential out of sample errors. We must take care to only consider the centered and scaled numeric predictors like we did in the Training data.
+```{r message = FALSE}
+crossval2 <- predict(pre, crossval[ ,num.cols])
+
+crossval.final <- crossval2[,near.0$nzv==FALSE]
+crossval.final$classe <- crossval$classe
+
+crossval.predict <- predict(model.fit, crossval.final)
+```
+
+``` {r}
+confusionMatrix(crossval.predict, crossval.final$classe) 
+```
+
+# Summary
+
+The accuracy of of the model was again over 99% on the cross-validation dataset, a good sign that our model will be robust on the Test data. Using varimp() we can see the top most useful variables in predicting the outcome. 
+
+```{r}
+varImp(model.fit)
+```
+
+To apply this model to the Testing data I will prepare the Test set like I did Training and Cross-Validation. I will not include the results here as to not ruin the fun! 
+
+
+
+
+
 

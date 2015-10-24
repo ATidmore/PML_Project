@@ -74,12 +74,145 @@ img {
 </div>
 
 
-<div id="executive-summary" class="section level1">
-<h1>Executive Summary</h1>
+<div id="executive-summary" class="section level2">
+<h2>Executive Summary</h2>
 <p>The goal of this project is to accurately predict the manner in which the subject completed the exercise - known as the “classe” variable - in the following datasets. The subjects either completed the exercise correctly (indicated by a “classe” value of A) or incorrectly (indicated by a value of “B” through “E” each of which corrresponds to a reason why the result was incorrect).</p>
 <p>Because the Training dataset was so large and I knew the requirement was to predict the outcome of 20 cases, I decided to split the Training dataset into a cross-validation dataset. This would help me understand the potential out of sample error rate.</p>
-<p>My approach was over-all very simple: I would pair down the 160 variables in the Training dataset as much as possible and use a robust machine learning algorithm (Random Forest) as a starting point. I was pleasantly surprised that my model with little customization apart from removing extraneous variables was very accurate. # Method</p>
-<pre class="r"><code> YOUR TRAIN MODEL HERE</code></pre>
+<p>My approach was over-all very simple: I would pair down the 160 variables in the Training dataset as much as possible and use a robust machine learning algorithm (Random Forest) as a starting point. I was pleasantly surprised that my model with little customization apart from removing extraneous variables was very accurate.</p>
+</div>
+<div id="method" class="section level2">
+<h2>Method</h2>
+<p>For R analysis some setup steps need to be taken:</p>
+<pre class="r"><code>require(caret)
+
+set.seed(1234)
+
+train.raw &lt;- read.csv(file=&quot;pml-training.csv&quot;, header=TRUE, as.is = TRUE, stringsAsFactors = FALSE, na.strings=c(&quot;NA&quot;,&quot;&quot;))
+test.raw &lt;- read.csv(file=&quot;pml-testing.csv&quot;, header=TRUE, as.is = TRUE, stringsAsFactors = FALSE, na.strings=c(&quot;NA&quot;,&quot;&quot;))</code></pre>
+<p>Since the Training dataset contained numerous variables (160), my first step was to identify and eliminate any variables which had “too many” missing values. I examined the data proportion of missing values in each column first, and it was evident that I could remove any column whose percentage of missing values was greater than 0.</p>
+<p><img src="data:image/png;base64,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" title alt width="672" /></p>
+<p>It is crucial to remove from the Test dataset any columns we removed from Training. Since I planned on cross-validating, the CV dataset is created here also.</p>
+<pre class="r"><code>bad.cols &lt;- which(colSums(is.na(train.raw))/nrow(train.raw) &gt; 0 )
+
+train.pre &lt;- train.raw[ ,-bad.cols]
+
+test.pre &lt;- test.raw[ ,-bad.cols]
+
+inTrain &lt;- createDataPartition(y = train.pre$classe, p = 0.75, list = FALSE)
+
+training &lt;- train.pre[inTrain, ]
+crossval &lt;- train.pre[-inTrain, ]</code></pre>
+<div id="basic-pre-processing" class="section level3">
+<h3>Basic Pre-Processing</h3>
+<p>The remaining variables of the Training dataset were mostly numeric in nature, and the non-numeric variables did not seem to be pertinent to my analysis. In order to assure that the remaining numeric variables could help explain the variance of the “classe” outcome, I centered and scaled those numeric variables and removed any which had near zero variance themselves - I did not identify any meeting this near-zero criterion.</p>
+<pre class="r"><code>num.cols &lt;- which(lapply(training, class) %in% &quot;numeric&quot;)
+
+pre &lt;- preProcess(training[,num.cols],method=c('center', 'scale'))
+
+train2 &lt;- predict(pre, training[ ,num.cols])
+
+near.0 &lt;- nearZeroVar(x = train2, saveMetrics = TRUE)
+
+train.final &lt;- train2[,near.0$nzv==FALSE]
+train.final$classe &lt;- training$classe</code></pre>
+</div>
+</div>
+<div id="training-the-model" class="section level2">
+<h2>Training the Model</h2>
+<p>A straight-forward Random Forest algorithm was selected due to its robust characteristics. Since I had pre-processed the data I was certain that the output would be digestible. Random Forest algorithms inherently bootstrap and attempt to optimize accuracy on its own.</p>
+<p>The accuracy of the final model (mtry = 2) was over 98.9% - an exceptional result for a straight-forward approach. This indicates the out of sample error rate should be somewhere around 1.1%.</p>
+<pre class="r"><code> model.fit &lt;- train(as.factor(classe) ~ . ,data = train.final ,method = &quot;rf&quot;)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 14718 samples
+##    27 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## Summary of sample sizes: 14718, 14718, 14718, 14718, 14718, 14718, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD   
+##    2    0.9896475  0.9869051  0.001331448  0.001689514
+##   14    0.9885775  0.9855530  0.001578853  0.001999063
+##   27    0.9843627  0.9802240  0.002420104  0.003058385
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 2.</code></pre>
+<div id="cross-validation" class="section level3">
+<h3>Cross-validation</h3>
+<p>A cross-validation dataset was necessary so that I could better understand my model’s performance and potential out of sample errors. We must take care to only consider the centered and scaled numeric predictors like we did in the Training data.</p>
+<pre class="r"><code>crossval2 &lt;- predict(pre, crossval[ ,num.cols])
+
+crossval.final &lt;- crossval2[,near.0$nzv==FALSE]
+crossval.final$classe &lt;- crossval$classe
+
+crossval.predict &lt;- predict(model.fit, crossval.final)</code></pre>
+<pre class="r"><code>confusionMatrix(crossval.predict, crossval.final$classe) </code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1395    3    0    1    0
+##          B    0  943   13    0    1
+##          C    0    3  836    4    1
+##          D    0    0    6  799    0
+##          E    0    0    0    0  899
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9935          
+##                  95% CI : (0.9908, 0.9955)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9917          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   0.9937   0.9778   0.9938   0.9978
+## Specificity            0.9989   0.9965   0.9980   0.9985   1.0000
+## Pos Pred Value         0.9971   0.9854   0.9905   0.9925   1.0000
+## Neg Pred Value         1.0000   0.9985   0.9953   0.9988   0.9995
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2845   0.1923   0.1705   0.1629   0.1833
+## Detection Prevalence   0.2853   0.1951   0.1721   0.1642   0.1833
+## Balanced Accuracy      0.9994   0.9951   0.9879   0.9962   0.9989</code></pre>
+</div>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<p>The accuracy of of the model was again over 99% on the cross-validation dataset, a good sign that our model will be robust on the Test data. Using varimp() we can see the top most useful variables in predicting the outcome.</p>
+<pre class="r"><code>varImp(model.fit)</code></pre>
+<pre><code>## rf variable importance
+## 
+##   only 20 most important variables shown (out of 27)
+## 
+##                   Overall
+## roll_belt          100.00
+## yaw_belt            80.53
+## pitch_forearm       62.39
+## magnet_dumbbell_z   62.25
+## pitch_belt          59.10
+## roll_forearm        44.65
+## roll_dumbbell       42.30
+## yaw_dumbbell        30.67
+## roll_arm            29.92
+## gyros_dumbbell_y    29.37
+## magnet_forearm_z    27.87
+## gyros_belt_z        27.78
+## yaw_arm             26.74
+## pitch_dumbbell      24.82
+## magnet_forearm_y    22.84
+## yaw_forearm         19.36
+## pitch_arm           15.48
+## gyros_arm_x         12.07
+## gyros_dumbbell_x    11.86
+## gyros_arm_y         10.78</code></pre>
+<p>To apply this model to the Testing data I will prepare the Test set like I did Training and Cross-Validation. I will not include the results here as to not ruin the fun!</p>
 </div>
 
 
